@@ -913,6 +913,7 @@ class Type
 
   # Convert a simple hash into a Resource instance.
   def self.hash2resource(hash)
+    puts("HASH2RESOURCE called")
     hash = hash.inject({}) { |result, ary| result[ary[0].to_sym] = ary[1]; result }
 
     title = hash.delete(:title)
@@ -931,6 +932,7 @@ class Type
     end
 
     hash.each do |param, value|
+      puts("NEXT ITEM IN HASH: '#{param.inspect}'")
       resource[param] = value
     end
     resource

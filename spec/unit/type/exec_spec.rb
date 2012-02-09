@@ -384,8 +384,9 @@ describe Puppet::Type.type(:exec) do
         ## Leaving this commented version in here because it fails on windows, due to what appears to be
         ##  an assumption about hash iteration order in lib/puppet/type.rb#hash2resource, where
         ##  resource[]= will overwrite the namevar with ":name" if the iteration is in the wrong order
-        #sleep_exec = Puppet::Type.type(:exec).new(:name => 'exec_spec sleep command', :command => "#{ruby_path} -e 'sleep 0.02'", :timeout => '0.01')
-        sleep_exec = Puppet::Type.type(:exec).new(:name => "#{ruby_path} -e 'sleep 0.02'", :timeout => '0.01')
+        sleep_exec = Puppet::Type.type(:exec).new(:name => 'exec_spec sleep command', :command => "#{ruby_path} -e 'sleep 0.02'", :timeout => '0.01')
+        #sleep_exec = Puppet::Type.type(:exec).new(:command => "#{ruby_path} -e 'sleep 0.02'", :name => 'exec_spec sleep command', :timeout => '0.01')
+        #sleep_exec = Puppet::Type.type(:exec).new(:name => "#{ruby_path} -e 'sleep 0.02'", :timeout => '0.01')
 
         lambda { sleep_exec.refresh }.should raise_error Puppet::Error, "Command exceeded timeout"
       end
