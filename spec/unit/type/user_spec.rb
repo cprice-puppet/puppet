@@ -1,12 +1,18 @@
 #!/usr/bin/env rspec
 require 'spec_helper'
 
-user = Puppet::Type.type(:user)
-
-describe user do
-  before do
-    @provider = stub 'provider'
-    @resource = stub 'resource', :resource => nil, :provider => @provider, :line => nil, :file => nil
+describe Puppet::Type.type(:user) do
+  before :each do
+    @provider_class = described_class.provide(:simple) do
+      has_features :manages_expiry, :manages_password_age, :manages_passwords, :manages_solaris_rbac
+      mk_resource_methods
+      def create; end
+      def delete; end
+      def exists?; get(:ensure) != :absent; end
+      def flush; end
+      def self.instances; []; end
+    end
+    described_class.stubs(:defaultprovider).returns @provider_class
   end
 
   it "should be able to create a instance" do
