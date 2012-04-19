@@ -297,6 +297,8 @@ class Puppet::Resource
 
     result = []
 
+    external_data = PSON.parse(File.read("./stupid.json"))
+
     resource_type.arguments.each do |param, default|
       param = param.to_sym
       next if parameters.include?(param)
@@ -304,9 +306,15 @@ class Puppet::Resource
         fail Puppet::DevError, "Cannot evaluate default parameters for #{self} - not a parser resource"
       end
 
-      next if default.nil?
+      value = nil
+      if external_data.has_key?(param)
+        value = external_data[param]
+      else
+        next if default.nil?
+        value = default.safeevaluate(scope)
+      end
 
-      self[param] = default.safeevaluate(scope)
+      self[param] = value
       result << param
     end
     result
