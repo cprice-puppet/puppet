@@ -13,10 +13,12 @@ module Puppet
 
       attr_reader :source_description, :default_log_level, :time, :resource
       attr_reader :change_count, :out_of_sync_count, :resource_type, :title
+      attr_reader :containing_class
 
       YAML_ATTRIBUTES = %w{@resource @file @line @evaluation_time @change_count
                            @out_of_sync_count @tags @time @events @out_of_sync
-                           @changed @resource_type @title @skipped @failed}.
+                           @changed @resource_type @title @skipped @failed
+                           @containing_class}.
         map(&:to_sym)
 
 
@@ -74,6 +76,7 @@ module Puppet
         @events = []
         @resource_type = resource.type.to_s.capitalize
         @title = resource.title
+        @containing_class = resource.containing_class
       end
 
       def initialize_from_hash(data)
@@ -91,6 +94,7 @@ module Puppet
         @changed = data['changed']
         @skipped = data['skipped']
         @failed = data['failed']
+        @containing_class = data['containing_class']
 
         @events = data['events'].map do |event|
           Puppet::Transaction::Event.from_pson(event)
@@ -113,6 +117,7 @@ module Puppet
           'skipped' => @skipped,
           'change_count' => @change_count,
           'out_of_sync_count' => @out_of_sync_count,
+          'containing_class' => @containing_class,
           'events' => @events,
         }.to_pson
       end

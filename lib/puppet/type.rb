@@ -2418,6 +2418,26 @@ class Type
   def appliable_to_host?
     self.class.can_apply_to(:host)
   end
+
+  # TODO docs
+  def containing_class
+    # TODO rant about whits
+    classes = catalog.relationship_graph.
+        direct_dependencies_of(self).
+        select { |r| r.type == :whit && r.name.start_with?("admissible_Class[") }.
+        map { |r| r.name.sub(/^admissible_Class\[/, "").sub(/\]$/, "") }
+
+    case classes.length
+    when 0
+      nil
+    when 1
+      # Seems like there should be an existing utility method for this
+      # somewhere, but I couldn't find it.
+      classes[0].split("::").map { |s| s.downcase }.join("::")
+    else
+      raise Puppet::Error, "Found multiple candidates when attempting to find containing class for resource '#{to_s}'"
+    end
+  end
 end
 end
 
