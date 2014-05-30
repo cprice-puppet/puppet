@@ -136,57 +136,58 @@ if disable_and_reenable_selinux
   on master, "setenforce 0"
 end
 
-step "Start the Apache httpd service..."
-on master, 'service httpd restart'
+step "Start the Puppet master service..."
+with_puppet_running_on(master, {}) do
+  # Move the agent SSL cert and key into place.
+  # The filename must match the configured certname, otherwise Puppet will try
+  # and generate a new certificate and key
+  step "Configure the agent with the externally issued certificates"
+  on master, "mkdir -p #{testdir}/etc/agent/ssl/{public_keys,certs,certificate_requests,private_keys,private}"
+  create_remote_file master, "#{testdir}/etc/agent/ssl/certs/#{fixtures.agent_name}.pem", fixtures.agent_cert
+  create_remote_file master, "#{testdir}/etc/agent/ssl/private_keys/#{fixtures.agent_name}.pem", fixtures.agent_key
 
-# Move the agent SSL cert and key into place.
-# The filename must match the configured certname, otherwise Puppet will try
-# and generate a new certificate and key
-step "Configure the agent with the externally issued certificates"
-on master, "mkdir -p #{testdir}/etc/agent/ssl/{public_keys,certs,certificate_requests,private_keys,private}"
-create_remote_file master, "#{testdir}/etc/agent/ssl/certs/#{fixtures.agent_name}.pem", fixtures.agent_cert
-create_remote_file master, "#{testdir}/etc/agent/ssl/private_keys/#{fixtures.agent_name}.pem", fixtures.agent_key
+  # Now, try and run the agent on the master against itself.
+  step "Successfully run the puppet agent on the master"
+  on master, puppet_agent("#{agent_cmd_prefix} --test"), :acceptable_exit_codes => (0..255) do
+    assert_no_match /Creating a new SSL key/, stdout
+    assert_no_match /\Wfailed\W/i, stderr
+    assert_no_match /\Wfailed\W/i, stdout
+    assert_no_match /\Werror\W/i, stderr
+    assert_no_match /\Werror\W/i, stdout
+    # Assert the exit code so we get a "Failed test" instead of an "Errored test"
+    assert exit_code == 0
+  end
 
-# Now, try and run the agent on the master against itself.
-step "Successfully run the puppet agent on the master"
-on master, puppet_agent("#{agent_cmd_prefix} --test"), :acceptable_exit_codes => (0..255) do
-  assert_no_match /Creating a new SSL key/, stdout
-  assert_no_match /\Wfailed\W/i, stderr
-  assert_no_match /\Wfailed\W/i, stdout
-  assert_no_match /\Werror\W/i, stderr
-  assert_no_match /\Werror\W/i, stdout
-  # Assert the exit code so we get a "Failed test" instead of an "Errored test"
-  assert exit_code == 0
+  step "Agent refuses to connect to a rogue master"
+  on master, puppet_agent("#{agent_cmd_prefix} --ssl_client_ca_auth=#{testdir}/ca_master.crt --masterport=8141 --test"), :acceptable_exit_codes => (0..255) do
+    assert_no_match /Creating a new SSL key/, stdout
+    assert_match /certificate verify failed/i, stderr
+    assert_match /The server presented a SSL certificate chain which does not include a CA listed in the ssl_client_ca_auth file/i, stderr
+    assert exit_code == 1
+  end
+
+  step "Master accepts client cert with email address in subject"
+  on master, "cp #{testdir}/etc/agent/puppet.conf{,.no_email}"
+  on master, "cp #{testdir}/etc/agent/puppet.conf{.email,}"
+  on master, puppet_agent("#{agent_cmd_prefix} --test"), :acceptable_exit_codes => (0..255) do
+    assert_no_match /\Wfailed\W/i, stdout
+    assert_no_match /\Wfailed\W/i, stderr
+    assert_no_match /\Werror\W/i, stdout
+    assert_no_match /\Werror\W/i, stderr
+    # Assert the exit code so we get a "Failed test" instead of an "Errored test"
+    assert exit_code == 0
+  end
+
+  step "Agent refuses to connect to revoked master"
+  on master, "cp #{testdir}/etc/agent/puppet.conf{,.no_crl}"
+  on master, "cp #{testdir}/etc/agent/puppet.conf{.crl,}"
+
+  revoke_opts = "--hostcrl #{testdir}/ca_master.crl"
+  on master, puppet_agent("#{agent_cmd_prefix} #{revoke_opts} --test"), :acceptable_exit_codes => (0..255) do
+    assert_match /certificate revoked.*?example.org/, stderr
+    assert exit_code == 1
+  end
+
+  step "Finished testing External Certificates"
 end
 
-step "Agent refuses to connect to a rogue master"
-on master, puppet_agent("#{agent_cmd_prefix} --ssl_client_ca_auth=#{testdir}/ca_master.crt --masterport=8141 --test"), :acceptable_exit_codes => (0..255) do
-  assert_no_match /Creating a new SSL key/, stdout
-  assert_match /certificate verify failed/i, stderr
-  assert_match /The server presented a SSL certificate chain which does not include a CA listed in the ssl_client_ca_auth file/i, stderr
-  assert exit_code == 1
-end
-
-step "Master accepts client cert with email address in subject"
-on master, "cp #{testdir}/etc/agent/puppet.conf{,.no_email}"
-on master, "cp #{testdir}/etc/agent/puppet.conf{.email,}"
-on master, puppet_agent("#{agent_cmd_prefix} --test"), :acceptable_exit_codes => (0..255) do
-  assert_no_match /\Wfailed\W/i, stdout
-  assert_no_match /\Wfailed\W/i, stderr
-  assert_no_match /\Werror\W/i, stdout
-  assert_no_match /\Werror\W/i, stderr
-  # Assert the exit code so we get a "Failed test" instead of an "Errored test"
-  assert exit_code == 0
-end
-
-step "Agent refuses to connect to revoked master"
-on master, "cp #{testdir}/etc/agent/puppet.conf{,.no_crl}"
-on master, "cp #{testdir}/etc/agent/puppet.conf{.crl,}"
-
-revoke_opts = "--hostcrl #{testdir}/ca_master.crl"
-on master, puppet_agent("#{agent_cmd_prefix} #{revoke_opts} --test"), :acceptable_exit_codes => (0..255) do
-  assert_match /certificate revoked.*?example.org/, stderr
-  assert exit_code == 1
-end
-
-step "Finished testing External Certificates"
