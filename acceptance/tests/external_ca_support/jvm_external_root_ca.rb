@@ -6,10 +6,10 @@ rescue LoadError
 end
 
 # This test only runs on EL-6 master roles.
-confine :to, :platform => 'el-6'
+# confine :to, :platform => 'el-6'
 confine :except, :type => 'pe'
 
-skip_test "Test not supported on jvm" if @options[:is_jvm_puppet]
+skip_test "Test only supported on jvm" unless @options[:is_jvm_puppet]
 
 # Verify that a trivial manifest can be run to completion.
 # Supported Setup: Single, Root CA
@@ -30,31 +30,31 @@ skip_test "Test not supported on jvm" if @options[:is_jvm_puppet]
 #   DNS:master-ca.example.org
 #
 #   See: https://bugs.ruby-lang.org/issues/6493
-test_name "Puppet agent works with Apache, both configured with externally issued certificates from independent intermediate CA's"
+test_name "Puppet agent and master work when both configured with externally issued certificates from independent intermediate CA's"
 
 step "Copy certificates and configuration files to the master..."
 fixture_dir = File.expand_path('../fixtures', __FILE__)
-testdir = master.tmpdir('apache_external_root_ca')
+testdir = master.tmpdir('jvm_external_root_ca')
 fixtures = PuppetX::Acceptance::ExternalCertFixtures.new(fixture_dir, testdir)
 
-# We need this variable in scope.
-disable_and_reenable_selinux = nil
+# # We need this variable in scope.
+# disable_and_reenable_selinux = nil
 
 # Register our cleanup steps early in a teardown so that they will happen even
 # if execution aborts part way.
 teardown do
-  step "Cleanup Apache (httpd) and /etc/hosts"
+  # step "Cleanup Apache (httpd) and /etc/hosts"
   # Restore /etc/hosts
   on master, "cp -p '#{testdir}/hosts' /etc/hosts"
-  # stop the service before moving files around
-  on master, "/etc/init.d/httpd stop"
-  on master, "mv --force /etc/httpd/conf/httpd.conf{,.external_ca_test}"
-  on master, "mv --force /etc/httpd/conf/httpd.conf{.orig,}"
+  # # stop the service before moving files around
+  # on master, "/etc/init.d/httpd stop"
+  # on master, "mv --force /etc/httpd/conf/httpd.conf{,.external_ca_test}"
+  # on master, "mv --force /etc/httpd/conf/httpd.conf{.orig,}"
 
-  if disable_and_reenable_selinux
-    step "Restore the original state of SELinux"
-    on master, "setenforce 1"
-  end
+  # if disable_and_reenable_selinux
+  #   step "Restore the original state of SELinux"
+  #   on master, "setenforce 1"
+  # end
 end
 
 # Read all of the CA certificates.
@@ -108,36 +108,44 @@ on master, "chmod -R a+rX #{testdir}"
 
 agent_cmd_prefix = "--confdir #{testdir}/etc/agent --vardir #{testdir}/etc/agent/var"
 
-step "Configure EPEL"
-epel_release_path = "http://mirror.us.leaseweb.net/epel/6/i386/epel-release-6-8.noarch.rpm"
-on master, "rpm -q epel-release || (yum -y install #{epel_release_path} && yum -y upgrade epel-release)"
+# step "Configure EPEL"
+# epel_release_path = "http://mirror.us.leaseweb.net/epel/6/i386/epel-release-6-8.noarch.rpm"
+# on master, "rpm -q epel-release || (yum -y install #{epel_release_path} && yum -y upgrade epel-release)"
 
-step "Configure Apache and Passenger"
-packages = [ 'httpd', 'mod_ssl', 'mod_passenger', 'rubygem-passenger', 'policycoreutils-python' ]
-packages.each do |pkg|
-  on master, "rpm -q #{pkg} || (yum -y install #{pkg})"
-end
+# step "Configure Apache and Passenger"
+# packages = [ 'httpd', 'mod_ssl', 'mod_passenger', 'rubygem-passenger', 'policycoreutils-python' ]
+# packages.each do |pkg|
+#   on master, "rpm -q #{pkg} || (yum -y install #{pkg})"
+# end
 
-create_remote_file master, "#{testdir}/etc/httpd.conf", fixtures.httpd_conf
-on master, 'test -f /etc/httpd/conf/httpd.conf.orig || cp -p /etc/httpd/conf/httpd.conf{,.orig}'
-on master, "cat #{testdir}/etc/httpd.conf > /etc/httpd/conf/httpd.conf"
+# create_remote_file master, "#{testdir}/etc/httpd.conf", fixtures.httpd_conf
+# on master, 'test -f /etc/httpd/conf/httpd.conf.orig || cp -p /etc/httpd/conf/httpd.conf{,.orig}'
+# on master, "cat #{testdir}/etc/httpd.conf > /etc/httpd/conf/httpd.conf"
 
-step "Make SELinux and Apache play nicely together..."
+# step "Make SELinux and Apache play nicely together..."
+#
+# on master, "sestatus" do
+#   if stdout.match(/Current mode:.*enforcing/)
+#     disable_and_reenable_selinux = true
+#   else
+#     disable_and_reenable_selinux = false
+#   end
+# end
+#
+# if disable_and_reenable_selinux
+#   on master, "setenforce 0"
+# end
 
-on master, "sestatus" do
-  if stdout.match(/Current mode:.*enforcing/)
-    disable_and_reenable_selinux = true
-  else
-    disable_and_reenable_selinux = false
-  end
-end
-
-if disable_and_reenable_selinux
-  on master, "setenforce 0"
-end
+master_opts = {
+    'master' => {
+        'hostcert' => "#{test_dir}/master.crt",
+        'hostprivkey' => "#{test_dir}/master.key",
+        ''
+    }
+}
 
 step "Start the Puppet master service..."
-with_puppet_running_on(master, {}) do
+with_puppet_running_on(master, master_opts) do
   # Move the agent SSL cert and key into place.
   # The filename must match the configured certname, otherwise Puppet will try
   # and generate a new certificate and key
