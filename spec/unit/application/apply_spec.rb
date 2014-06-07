@@ -129,17 +129,19 @@ describe Puppet::Application::Apply do
     it "configures a profiler when profiling is enabled" do
       Puppet[:profile] = true
 
-      @apply.setup
+      Puppet::Util::Profiler.expects(:add_profiler).with { |profiler|
+        profiler.is_a?(Puppet::Util::Profiler::WallClock)
+      }
 
-      expect(Puppet::Util::Profiler.current).to be_a(Puppet::Util::Profiler::WallClock)
+      @apply.setup
     end
 
     it "does not have a profiler if profiling is disabled" do
       Puppet[:profile] = false
 
-      @apply.setup
+      Puppet::Util::Profiler.expects(:add_profiler).never
 
-      expect(Puppet::Util::Profiler.current).to eq(Puppet::Util::Profiler::NONE)
+      @apply.setup
     end
 
     it "should set default_file_terminus to `file_server` to be local" do

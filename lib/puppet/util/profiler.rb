@@ -6,27 +6,27 @@ require 'benchmark'
 module Puppet::Util::Profiler
   require 'puppet/util/profiler/wall_clock'
   require 'puppet/util/profiler/object_counts'
-  require 'puppet/util/profiler/none'
 
-  NONE = Puppet::Util::Profiler::None.new
+  @profilers = []
 
   # Reset the profiling system to the original state
   #
   # @api private
   def self.clear
-    @profiler = nil
-  end
-
-  # @return This thread's configured profiler
-  # @api private
-  def self.current
-    @profiler || NONE
+    @profilers = []
   end
 
   # @param profiler [#profile] A profiler for the current thread
   # @api private
-  def self.current=(profiler)
-    @profiler = profiler
+  def self.add_profiler(profiler)
+    @profilers << profiler
+    profiler
+  end
+
+  # @param profiler [#profile] A profiler to remove from the current thread
+  # @api private
+  def self.remove_profiler(profiler)
+    @profilers.delete(profiler)
   end
 
   # Profile a block of code and log the time it took to execute.
@@ -39,7 +39,21 @@ module Puppet::Util::Profiler
   # @param message [String] A description of the profiled event
   # @param block [Block] The segment of code to profile
   # @api public
-  def self.profile(message, &block)
-    current.profile(message, &block)
+  def self.profile(message)
+    retval = nil
+    contexts = {}
+    @profilers.each do |profiler|
+      contexts[profiler] = profiler.start(message)
+    end
+
+    begin
+      retval = yield
+    ensure
+      @profilers.each do |profiler|
+        profiler.finish(contexts[profiler], message)
+      end
+    end
+
+    retval
   end
 end
