@@ -39,18 +39,18 @@ module Puppet::Util::Profiler
   # @param message [String] A description of the profiled event
   # @param block [Block] The segment of code to profile
   # @api public
-  def self.profile(message)
+  def self.profile(metric, message)
     retval = nil
     contexts = {}
     @profilers.each do |profiler|
-      contexts[profiler] = profiler.start(message)
+      contexts[profiler] = profiler.start(metric, message)
     end
 
     begin
       retval = yield
     ensure
       @profilers.each do |profiler|
-        profiler.finish(contexts[profiler], message)
+        profiler.finish(contexts[profiler], metric, message)
       end
     end
 

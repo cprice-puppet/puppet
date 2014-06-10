@@ -208,7 +208,7 @@ class Puppet::Indirector::Indirection
 
         filtered = result
         if terminus.respond_to?(:filter)
-          Puppet::Util::Profiler.profile("Filtered result for #{self.name} #{request.key}") do
+          Puppet::Util::Profiler.profile(["indirector", "filter", self.name], "Filtered result for #{self.name} #{request.key}") do
             filtered = terminus.filter(result)
           end
         end

@@ -17,7 +17,7 @@ class Puppet::Resource::Catalog::Compiler < Puppet::Indirector::Code
       raise ArgumentError, "Facts but no fact format provided for #{request.key}"
     end
 
-    Puppet::Util::Profiler.profile("Found facts") do
+    Puppet::Util::Profiler.profile(["compiler", "find-facts"], "Found facts") do
       # If the facts were encoded as yaml, then the param reconstitution system
       # in Network::HTTP::Handler will automagically deserialize the value.
       if text_facts.is_a?(Puppet::Node::Facts)
@@ -65,7 +65,7 @@ class Puppet::Resource::Catalog::Compiler < Puppet::Indirector::Code
   end
 
   def initialize
-    Puppet::Util::Profiler.profile("Setup server facts for compiling") do
+    Puppet::Util::Profiler.profile(["compiler", "init-server-facts"], "Setup server facts for compiling") do
       set_server_facts
     end
   end
@@ -90,7 +90,7 @@ class Puppet::Resource::Catalog::Compiler < Puppet::Indirector::Code
     config = nil
 
     benchmark(:notice, str) do
-      Puppet::Util::Profiler.profile(str) do
+      Puppet::Util::Profiler.profile(["compiler", "compile", node.environment, node.name], str) do
         begin
           config = Puppet::Parser::Compiler.compile(node)
         rescue Puppet::Error => detail
@@ -105,7 +105,7 @@ class Puppet::Resource::Catalog::Compiler < Puppet::Indirector::Code
 
   # Turn our host name into a node object.
   def find_node(name, environment, transaction_uuid)
-    Puppet::Util::Profiler.profile("Found node information") do
+    Puppet::Util::Profiler.profile(["compiler", "find-node"], "Found node information") do
       node = nil
       begin
         node = Puppet::Node.indirection.find(name, :environment => environment,

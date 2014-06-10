@@ -107,25 +107,25 @@ class Puppet::Parser::Compiler
       @catalog.environment_instance = environment
 
       # Set the client's parameters into the top scope.
-      Puppet::Util::Profiler.profile("Compile: Set node parameters") { set_node_parameters }
+      Puppet::Util::Profiler.profile(["compiler", "set-node-params"], "Compile: Set node parameters") { set_node_parameters }
 
-      Puppet::Util::Profiler.profile("Compile: Created settings scope") { create_settings_scope }
+      Puppet::Util::Profiler.profile(["compiler", "create-settings-scope"], "Compile: Created settings scope") { create_settings_scope }
 
       if is_binder_active?
         # create injector, if not already created - this is for 3x that does not trigger
         # lazy loading of injector via context
-        Puppet::Util::Profiler.profile("Compile: Created injector") { injector }
+        Puppet::Util::Profiler.profile(["compiler", "create-injector"], "Compile: Created injector") { injector }
       end
 
-      Puppet::Util::Profiler.profile("Compile: Evaluated main") { evaluate_main }
+      Puppet::Util::Profiler.profile(["compiler", "evaluate-main"], "Compile: Evaluated main") { evaluate_main }
 
-      Puppet::Util::Profiler.profile("Compile: Evaluated AST node") { evaluate_ast_node }
+      Puppet::Util::Profiler.profile(["compiler", "evaluate-ast-node"], "Compile: Evaluated AST node") { evaluate_ast_node }
 
-      Puppet::Util::Profiler.profile("Compile: Evaluated node classes") { evaluate_node_classes }
+      Puppet::Util::Profiler.profile(["compiler", "evaluate-node-classes"], "Compile: Evaluated node classes") { evaluate_node_classes }
 
-      Puppet::Util::Profiler.profile("Compile: Evaluated generators") { evaluate_generators }
+      Puppet::Util::Profiler.profile(["compiler", "evaluate-generators"], "Compile: Evaluated generators") { evaluate_generators }
 
-      Puppet::Util::Profiler.profile("Compile: Finished catalog") { finish }
+      Puppet::Util::Profiler.profile(["compiler", "finish-catalog"], "Compile: Finished catalog") { finish }
 
       fail_on_unevaluated
 
@@ -352,7 +352,7 @@ class Puppet::Parser::Compiler
       # We have to iterate over a dup of the array because
       # collections can delete themselves from the list, which
       # changes its length and causes some collections to get missed.
-      Puppet::Util::Profiler.profile("Evaluated collections") do
+      Puppet::Util::Profiler.profile(["compiler", "evaluate-collections"], "Evaluated collections") do
         found_something = false
         @collections.dup.each do |collection|
           found_something = true if collection.evaluate
@@ -367,9 +367,9 @@ class Puppet::Parser::Compiler
   # evaluate_generators loop.
   def evaluate_definitions
     exceptwrap do
-      Puppet::Util::Profiler.profile("Evaluated definitions") do
+      Puppet::Util::Profiler.profile(["compiler", "evaluate-definitions"], "Evaluated definitions") do
         !unevaluated_resources.each do |resource|
-          Puppet::Util::Profiler.profile("Evaluated resource #{resource}") do
+          Puppet::Util::Profiler.profile(["compiler", "evaluate-resource", resource], "Evaluated resource #{resource}") do
             resource.evaluate
           end
         end.empty?
@@ -386,7 +386,7 @@ class Puppet::Parser::Compiler
     loop do
       done = true
 
-      Puppet::Util::Profiler.profile("Iterated (#{count + 1}) on generators") do
+      Puppet::Util::Profiler.profile(["compiler", "iterate-on-generators"], "Iterated (#{count + 1}) on generators") do
         # Call collections first, then definitions.
         done = false if evaluate_collections
         done = false if evaluate_definitions
