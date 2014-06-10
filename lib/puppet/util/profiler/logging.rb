@@ -5,16 +5,20 @@ class Puppet::Util::Profiler::Logging
     @sequence = Sequence.new
   end
 
-  def start(description)
+  def start(metric, description)
     @sequence.next
     @sequence.down
-    do_start
+    do_start(metric, description)
   end
 
-  def finish(context, description)
-    profile_explanation = do_finish(context)
+  def finish(context, metric, description)
+    profile_explanation = do_finish(context, metric, description)[:msg]
     @sequence.up
     @logger.call("PROFILE [#{@identifier}] #{@sequence} #{description}: #{profile_explanation}")
+  end
+
+  def shutdown()
+    # nothing to do
   end
 
   class Sequence

@@ -110,12 +110,12 @@ class Puppet::Network::HTTP::API::V1
 
     rendered_result = result
     if result.respond_to?(:render)
-      Puppet::Util::Profiler.profile("Rendered result in #{format}") do
+      Puppet::Util::Profiler.profile(["http", "v1-render", format], "Rendered result in #{format}") do
         rendered_result = result.render(format)
       end
     end
 
-    Puppet::Util::Profiler.profile("Sent response") do
+    Puppet::Util::Profiler.profile(["http", "v1-response"], "Sent response") do
       response.respond_with(200, format, rendered_result)
     end
   end
