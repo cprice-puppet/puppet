@@ -17,6 +17,10 @@ class Puppet::Util::Profiler::Logging
     @logger.call("PROFILE [#{@identifier}] #{@sequence} #{description}: #{profile_explanation}")
   end
 
+  def shutdown()
+    # nothing to do
+  end
+
   class Sequence
     INITIAL = 0
     SEPARATOR = '.'

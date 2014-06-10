@@ -7,6 +7,14 @@ class Puppet::Util::Profiler::Aggregate < Puppet::Util::Profiler::WallClock
     @metrics_hash = Metric.new
   end
 
+  def shutdown()
+    super
+    @logger.call("AGGREGATE PROFILING RESULTS:")
+    @logger.call("----------------------------")
+    print_metrics(@metrics_hash, "")
+    @logger.call("----------------------------")
+  end
+
   def do_start(metric, description)
     super(metric, description)
   end
@@ -29,6 +37,13 @@ class Puppet::Util::Profiler::Aggregate < Puppet::Util::Profiler::WallClock
 
   def values
     @metrics_hash
+  end
+
+  def print_metrics(metrics_hash, prefix)
+    metrics_hash.sort_by {|k,v| v.time }.reverse.each do |k,v|
+      @logger.call("#{prefix}#{k}: #{v.time} ms (#{v.count} calls)")
+      print_metrics(metrics_hash[k], "#{prefix}#{k} -> ")
+    end
   end
 
   class Metric < Hash

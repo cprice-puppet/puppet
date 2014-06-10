@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'puppet/util/profiler'
 
 describe Puppet::Util::Profiler::Logging do
-  let(:logger) { SimpleLog.new }
+  let(:logger) { Puppet::Util::Profiler::Logging::SimpleLog.new }
   let(:identifier) { "Profiling ID" }
   let(:profiler) { TestLoggingProfiler.new(logger, identifier) }
 
