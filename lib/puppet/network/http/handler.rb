@@ -43,10 +43,11 @@ module Puppet::Network::HTTP::Handler
     format.is_a?(Puppet::Network::Format) ? format.mime : format
   end
 
-  def accepted_response_formatter_for(model_class, request)
-    accepted_formats = request.headers['accept'] or raise Puppet::Network::HTTP::Error::HTTPNotAcceptableError.new("Missing required Accept header", Puppet::Network::HTTP::Issues::MISSING_HEADER_FIELD)
-    request.response_formatter_for(model_class.supported_formats, accepted_formats)
-  end
+  # def accepted_response_formatter_for(model_class, request)
+  #   # accepted_formats = request.headers['accept'] or raise Puppet::Network::HTTP::Error::HTTPNotAcceptableError.new("Missing required Accept header", Puppet::Network::HTTP::Issues::MISSING_HEADER_FIELD)
+  #   # request.response_formatter_for(model_class.supported_formats, accepted_formats)
+  #   x = model_class.supported_formats
+  # end
 
   # handle an HTTP request
   def process(request, response)
@@ -73,7 +74,8 @@ module Puppet::Network::HTTP::Handler
     #   end
     # end
 
-    format = accepted_response_formatter_for(Puppet::Resource::Catalog, new_request)
+    # format = accepted_response_formatter_for(Puppet::Resource::Catalog, new_request)
+    x = Puppet::Resource::Catalog.supported_formats
 
     new_response.respond_with(200, Puppet::Network::FormatHandler.format("pson"),
                               '{"document_type":"Catalog","data":{"tags":["settings"],"name":"puppet-agent","version":1406153164,"environment":"production","resources":[{"type":"Stage","title":"main","tags":["stage"],"exported":false,"parameters":{"name":"main"}},{"type":"Class","title":"Settings","tags":["class","settings"],"exported":false},{"type":"Class","title":"main","tags":["class"],"exported":false,"parameters":{"name":"main"}}],"edges":[{"source":"Stage[main]","target":"Class[Settings]"},{"source":"Stage[main]","target":"Class[main]"}],"classes":["settings"]},"metadata":{"api_version":1}}')

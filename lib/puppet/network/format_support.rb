@@ -35,22 +35,32 @@ module Puppet::Network::FormatSupport
     end
 
     def supported_formats
-      result = format_handler.formats.collect do |f|
-        format_handler.format(f)
-      end.find_all do |f|
-        f.supported?(self)
-      end.sort do |a, b|
-        # It's an inverse sort -- higher weight formats go first.
-        b.weight <=> a.weight
-      end.collect do |f|
-        f.name
-      end
+      puts "SUP yo, you find the correct version of 'supported_formats'"
 
-      result = put_preferred_format_first(result)
+      formats = format_handler.formats
+      puts "FORMATS: #{formats}"
+      formats = formats.map { |f| format_handler.format(f) }
+      puts "NOW FORMATS: #{formats}"
+      supported = formats.find_all { |f| f.supported?(self) }
 
-      Puppet.debug "#{friendly_name} supports formats: #{result.join(' ')}"
+      # result = format_handler.formats.collect do |f|
+      #   format_handler.format(f)
+      # end.find_all do |f|
+      #   f.supported?(self)
+      # # end.sort do |a, b|
+      # #   # It's an inverse sort -- higher weight formats go first.
+      # #   b.weight <=> a.weight
+      # # end.collect do |f|
+      # #   f.name
+      # end
 
-      result
+      # result = put_preferred_format_first(result)
+
+      # Puppet.debug "#{friendly_name} supports formats: #{result.join(' ')}"
+      #
+      # result
+
+      nil
     end
 
     # @api private

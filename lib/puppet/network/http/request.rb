@@ -34,7 +34,10 @@ Puppet::Network::HTTP::Request = Struct.new(:headers, :params, :method, :path, :
     raise "No Content-Type header was received, it isn't possible to unserialize the request"
   end
 
-  def response_formatter_for(supported_formats, accepted_formats = headers['accept'])
+  def response_formatter_for(supported_formats, accepted_formats = nil)
+    # if accepted_formats.nil?
+    #   accepted_formats = headers['accept']
+    # end
     # formatter = Puppet::Network::FormatHandler.most_suitable_format_for(
     #   accepted_formats.split(/\s*,\s*/),
     #   supported_formats)

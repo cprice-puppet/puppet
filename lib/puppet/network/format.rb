@@ -83,8 +83,16 @@ class Puppet::Network::Format
     true
   end
 
+  def suitable?(short = true)
+    puts "in local suitable"
+    x = confine_collection.valid?
+    true
+    # return(short ? confine_collection.valid? : confine_collection.summary)
+  end
+
   def supported?(klass)
-    suitable? and required_methods_present?(klass)
+    suitable?
+    # suitable? and required_methods_present?(klass)
   end
 
   def to_s
