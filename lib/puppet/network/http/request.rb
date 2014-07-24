@@ -35,17 +35,18 @@ Puppet::Network::HTTP::Request = Struct.new(:headers, :params, :method, :path, :
   end
 
   def response_formatter_for(supported_formats, accepted_formats = headers['accept'])
-    formatter = Puppet::Network::FormatHandler.most_suitable_format_for(
-      accepted_formats.split(/\s*,\s*/),
-      supported_formats)
-
-      if formatter.nil?
-        raise Puppet::Network::HTTP::Error::HTTPNotAcceptableError.new("No supported formats are acceptable (Accept: #{accepted_formats})", Puppet::Network::HTTP::Issues::UNSUPPORTED_FORMAT)
-      end
-
-      report_if_deprecated(formatter)
-
-      formatter
+    # formatter = Puppet::Network::FormatHandler.most_suitable_format_for(
+    #   accepted_formats.split(/\s*,\s*/),
+    #   supported_formats)
+    #
+    #   if formatter.nil?
+    #     raise Puppet::Network::HTTP::Error::HTTPNotAcceptableError.new("No supported formats are acceptable (Accept: #{accepted_formats})", Puppet::Network::HTTP::Issues::UNSUPPORTED_FORMAT)
+    #   end
+    #
+    #   report_if_deprecated(formatter)
+    #
+    #   formatter
+    nil
   end
 
   def report_if_deprecated(format)

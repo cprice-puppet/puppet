@@ -30,6 +30,7 @@ class Puppet::Network::HTTP::API::V1
 
   # handle an HTTP request
   def call(request, response)
+    puts "V1#call"
     indirection_name, method, key, params = uri2indirection(request.method, request.path, request.params)
     certificate = request.client_cert
 
@@ -102,22 +103,29 @@ class Puppet::Network::HTTP::API::V1
 
   # Execute our find.
   def do_find(indirection, key, params, request, response)
-    unless result = indirection.find(key, params)
-      raise Puppet::Network::HTTP::Error::HTTPNotFoundError.new("Could not find #{indirection.name} #{key}", Puppet::Network::HTTP::Issues::RESOURCE_NOT_FOUND)
-    end
+    # unless result = indirection.find(key, params)
+    #   raise Puppet::Network::HTTP::Error::HTTPNotFoundError.new("Could not find #{indirection.name} #{key}", Puppet::Network::HTTP::Issues::RESOURCE_NOT_FOUND)
+    # end
 
+    puts "INDIRECTION MODEL: #{indirection.model} (#{indirection.model.class})"
+    puts "REQUEST: #{request} (#{request.class})"
     format = accepted_response_formatter_for(indirection.model, request)
 
-    rendered_result = result
-    if result.respond_to?(:render)
-      Puppet::Util::Profiler.profile("Rendered result in #{format}", [:http, :v1_render, format]) do
-        rendered_result = result.render(format)
-      end
-    end
+    # rendered_result = result
+    # if result.respond_to?(:render)
+    #   Puppet::Util::Profiler.profile("Rendered result in #{format}", [:http, :v1_render, format]) do
+    #     rendered_result = result.render(format)
+    #   end
+    # end
+    #
+    # Puppet::Util::Profiler.profile("Sent response", [:http, :v1_response]) do
+    #   puts "Populating response: 200, #{format}, #{rendered_result} (#{rendered_result.class})"
+    #   response.respond_with(200, format, rendered_result)
+    # end
 
-    Puppet::Util::Profiler.profile("Sent response", [:http, :v1_response]) do
-      response.respond_with(200, format, rendered_result)
-    end
+    response.respond_with(200, Puppet::Network::FormatHandler.format("pson"),
+                          '{"document_type":"Catalog","data":{"tags":["settings"],"name":"puppet-agent","version":1406153164,"environment":"production","resources":[{"type":"Stage","title":"main","tags":["stage"],"exported":false,"parameters":{"name":"main"}},{"type":"Class","title":"Settings","tags":["class","settings"],"exported":false},{"type":"Class","title":"main","tags":["class"],"exported":false,"parameters":{"name":"main"}}],"edges":[{"source":"Stage[main]","target":"Class[Settings]"},{"source":"Stage[main]","target":"Class[main]"}],"classes":["settings"]},"metadata":{"api_version":1}}')
+
   end
 
   # Execute our head.

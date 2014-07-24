@@ -79,6 +79,7 @@ class Puppet::Network::HTTP::Route
   def process(request, response)
     handlers = @method_handlers[request.method.upcase.intern] || NO_HANDLERS
     handlers.each do |handler|
+      puts "CALLING HANDLER: #{handler} (#{handler.class})"
       handler.call(request, response)
     end
 

@@ -44,18 +44,20 @@ class Puppet::Resource::Catalog::Compiler < Puppet::Indirector::Code
 
   # Compile a node's catalog.
   def find(request)
-    extract_facts_from_request(request)
+    return Puppet::Resource::Catalog.from_pson({})
 
-    node = node_from_request(request)
-    node.trusted_data = Puppet.lookup(:trusted_information) { Puppet::Context::TrustedInformation.local(node) }.to_h
+    # extract_facts_from_request(request)
+    #
+    # node = node_from_request(request)
+    # node.trusted_data = Puppet.lookup(:trusted_information) { Puppet::Context::TrustedInformation.local(node) }.to_h
 
-    if catalog = compile(node)
-      return catalog
-    else
-      # This shouldn't actually happen; we should either return
-      # a config or raise an exception.
-      return nil
-    end
+    # if catalog = compile(node)
+    #   return catalog
+    # else
+    #   # This shouldn't actually happen; we should either return
+    #   # a config or raise an exception.
+    #   return nil
+    # end
   end
 
   # filter-out a catalog to remove exported resources
@@ -85,21 +87,33 @@ class Puppet::Resource::Catalog::Compiler < Puppet::Indirector::Code
 
   # Compile the actual catalog.
   def compile(node)
+    puts "compiling catalog"
+    puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    puts "#{caller.join("\n")}"
     str = "Compiled catalog for #{node.name}"
     str += " in environment #{node.environment}" if node.environment
     config = nil
 
-    benchmark(:notice, str) do
-      Puppet::Util::Profiler.profile(str, [:compiler, :compile, node.environment, node.name]) do
-        begin
-          config = Puppet::Parser::Compiler.compile(node)
-        rescue Puppet::Error => detail
-          Puppet.err(detail.to_s) if networked?
-          raise
-        end
-      end
-    end
+    # config = Puppet::Resource::Catalog.from_pson({"document_type" => "Catalog", "data" => {"tags" => ["settings"], "name" => "puppet-agent", "version" => 1406163952, "environment" => "production", "resources" => [{"type" => "Stage", "title" => "main", "tags" => ["stage"], "exported" => false, "parameters" => {"name" => "main"}}, {"type" => "Class", "title" => "Settings", "tags" => ["class", "settings"], "exported" => false}, {"type" => "Class", "title" => "main", "tags" => ["class"], "exported" => false, "parameters" => {"name" => "main"}}],"edges" => [{"source" => "Stage[main]", "target" => "Class[Settings]"}, {"source" => "Stage[main]", "target" => "Class[main]"}],"classes" => ["settings"]}, "metadata" => {"api_version" => 1}})
+    config = Puppet::Resource::Catalog.from_pson({})
 
+    # benchmark(:notice, str) do
+    #   Puppet::Util::Profiler.profile(str, [:compiler, :compile, node.environment, node.name]) do
+    #     begin
+    #       config = Puppet::Parser::Compiler.compile(node)
+    #     rescue Puppet::Error => detail
+    #       Puppet.err(detail.to_s) if networked?
+    #       raise
+    #     end
+    #   end
+    # end
+    #
+    #
+    #
+    # puts "Returning config: '#{config}' (#{config.class})"
+    # puts "PSON:"
+    # puts config.to_pson
+    # puts
     config
   end
 
