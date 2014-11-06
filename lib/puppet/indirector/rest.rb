@@ -84,8 +84,13 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
   end
 
   def find(request)
+    puts "\n\nI N D I R E C T O R: find! #{request}"
     uri, body = Puppet::Network::HTTP::API::V1.request_to_uri_and_body(request)
     uri_with_query_string = "#{uri}?#{body}"
+
+    puts "URI: #{uri}"
+
+    puts "\n\n"
 
     response = do_request(request) do |request|
       # WEBrick in Ruby 1.9.1 only supports up to 1024 character lines in an HTTP request
@@ -135,6 +140,7 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
   end
 
   def search(request)
+    puts "\n\nI N D I R E C T O R: save! #{request}"
     response = do_request(request) do |request|
       http_get(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), headers)
     end

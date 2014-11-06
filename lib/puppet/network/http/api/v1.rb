@@ -196,7 +196,10 @@ class Puppet::Network::HTTP::API::V1
 
   def self.request_to_uri_and_body(request)
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    ["/#{request.environment.to_s}/#{indirection}/#{request.escaped_key}", request.query_string.sub(/^\?/,'')]
+    # rv = ["/#{request.environment.to_s}/#{indirection}/#{request.escaped_key}", request.query_string.sub(/^\?/,'')]
+    rv = ["/#{indirection}/#{request.escaped_key}", request.query_string.sub(/^\?/,'') << "&environment=#{request.environment.to_s}"]
+    puts "REQUEST_TO_URI returning: #{rv}"
+    rv
   end
 
   def self.pluralize(indirection)
