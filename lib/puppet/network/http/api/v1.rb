@@ -56,12 +56,20 @@ class Puppet::Network::HTTP::API::V1
   end
 
   def uri2indirection(http_method, uri, params)
-    environment, indirection, key = uri.split("/", 4)[1..-1] # the first field is always nil because of the leading slash
+    puts "URI TO INDIRECTION: #{uri}"
+    puts "HTTP METHOD: (#{http_method.class}) #{http_method}"
+    puts "\tparams: #{params}"
+    # environment, indirection, key = uri.split("/", 4)[1..-1] # the first field is always nil because of the leading slash
+    # if xxx
+    environment = params.delete(:environment)
+    puts "ENVIRONMENT IS: #{environment}"
+    indirection, key = uri.split("/", 3)[1..-1] # the first field is always nil because of the leading slash
 
-    raise ArgumentError, "The environment must be purely alphanumeric, not '#{environment}'" unless Puppet::Node::Environment.valid_name?(environment)
+    # raise ArgumentError, "The environment must be purely alphanumeric, not '#{environment}'" unless Puppet::Node::Environment.valid_name?(environment)
     raise ArgumentError, "The indirection name must be purely alphanumeric, not '#{indirection}'" unless indirection =~ /^\w+$/
 
     method = indirection_method(http_method, indirection)
+    puts "INDIRECTION METHOD: (#{method.class}) #{method}"
 
     configured_environment = Puppet.lookup(:environments).get(environment)
     if configured_environment.nil?
@@ -154,6 +162,7 @@ class Puppet::Network::HTTP::API::V1
 
   # Execute our save.
   def do_save(indirection, key, params, request, response)
+    puts "DO SAVE"
     formatter = accepted_response_formatter_or_yaml_for(indirection.model, request)
     sent_object = read_body_into_model(indirection.model, request)
 
@@ -191,13 +200,20 @@ class Puppet::Network::HTTP::API::V1
 
   def self.indirection2uri(request)
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    "/#{request.environment.to_s}/#{indirection}/#{request.escaped_key}#{request.query_string}"
+    #"/#{request.environment.to_s}/#{indirection}/#{request.escaped_key}#{request.query_string}"
+    "/#{indirection}/#{request.escaped_key}#{request.query_string}"
+  end
+
+  def self.request_to_uri_with_env(request)
+    indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
+    # "/#{request.environment.to_s}/#{indirection}/#{request.escaped_key}#{request.query_string}"
+    "/#{indirection}/#{request.escaped_key}?environment=#{request.environment.to_s}&#{request.query_string.sub(/^\?/,'')}"
   end
 
   def self.request_to_uri_and_body(request)
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
     # rv = ["/#{request.environment.to_s}/#{indirection}/#{request.escaped_key}", request.query_string.sub(/^\?/,'')]
-    rv = ["/#{indirection}/#{request.escaped_key}", request.query_string.sub(/^\?/,'') << "&environment=#{request.environment.to_s}"]
+    rv = ["/#{indirection}/#{request.escaped_key}", "environment=#{request.environment.to_s}&#{request.query_string.sub(/^\?/,'')}"]
     puts "REQUEST_TO_URI returning: #{rv}"
     rv
   end

@@ -128,7 +128,7 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
 
   def head(request)
     response = do_request(request) do |request|
-      http_head(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), headers)
+      http_head(request, Puppet::Network::HTTP::API::V1.request_to_uri_with_env(request), headers)
     end
 
     if is_http_200?(response)
@@ -140,9 +140,9 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
   end
 
   def search(request)
-    puts "\n\nI N D I R E C T O R: save! #{request}"
+    puts "\n\nI N D I R E C T O R: search! #{request}"
     response = do_request(request) do |request|
-      http_get(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), headers)
+      http_get(request, Puppet::Network::HTTP::API::V1.request_to_uri_with_env(request), headers)
     end
 
     if is_http_200?(response)
@@ -158,7 +158,7 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
     raise ArgumentError, "DELETE does not accept options" unless request.options.empty?
 
     response = do_request(request) do |request|
-      http_delete(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), headers)
+      http_delete(request, Puppet::Network::HTTP::API::V1.request_to_uri_with_env(request), headers)
     end
 
     if is_http_200?(response)
@@ -171,10 +171,18 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
   end
 
   def save(request)
+    puts "INDIRECTOR SAVE!!! #{request}"
+
+    # uri, body = Puppet::Network::HTTP::API::V1.request_to_uri_and_body(request)
+    uri = Puppet::Network::HTTP::API::V1.indirection2uri(request)
+    # puts "URI: #{Puppet::Network::HTTP::API::V1.indirection2uri(request)}"
+    puts "request.instance: (#{request.instance.class}) #{request.instance}"
     raise ArgumentError, "PUT does not accept options" unless request.options.empty?
 
     response = do_request(request) do |request|
-      http_put(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), request.instance.render, headers.merge({ "Content-Type" => request.instance.mime }))
+      request.instance.environment = request.environment.to_s
+      # http_put(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), request.instance.render, headers.merge({ "Content-Type" => request.instance.mime }))
+      http_put(request, uri, request.instance.render, headers.merge({ "Content-Type" => request.instance.mime }))
     end
 
     if is_http_200?(response)
