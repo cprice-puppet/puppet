@@ -88,8 +88,13 @@ class Puppet::Util::Feature
       require lib
     rescue SystemExit,NoMemoryError
       raise
-    rescue Exception
-      Puppet.debug "Failed to load library '#{lib}' for feature '#{name}'"
+    rescue Exception => ex
+      Puppet.err "Failed to load library '#{lib}' for feature '#{name}'"
+      Puppet.err ex
+      Puppet.err ex.backtrace.join("\n")
+      puts "FAILED TO LOAD: #{lib}, #{name}"
+      puts ex.message
+      puts ex.backtrace.join("\n")
       return false
     end
     true
