@@ -21,7 +21,7 @@ describe Puppet::Network::HTTP::API::V3 do
         'accept' => request[:accept_header],
         'content-type' => "text/pson", },
       :method => "HEAD",
-      :path => "/#{indirection.name}/#{data.value}",
+      :path => "/v3/#{indirection.name}/#{data.value}",
       :params => params,
     })
   end
@@ -32,7 +32,7 @@ describe Puppet::Network::HTTP::API::V3 do
         'accept' => request[:accept_header],
         'content-type' => request[:content_type_header] || "text/pson", },
       :method => "PUT",
-      :path => "/#{indirection.name}/#{data.value}",
+      :path => "/v3/#{indirection.name}/#{data.value}",
       :params => params,
       :body => request[:body].nil? ? data.render("pson") : request[:body]
     })
@@ -44,7 +44,7 @@ describe Puppet::Network::HTTP::API::V3 do
         'accept' => request[:accept_header],
         'content-type' => "text/pson", },
       :method => "DELETE",
-      :path => "/#{indirection.name}/#{data.value}",
+      :path => "/v3/#{indirection.name}/#{data.value}",
       :params => params,
       :body => ''
     })
@@ -56,7 +56,7 @@ describe Puppet::Network::HTTP::API::V3 do
         'accept' => request[:accept_header],
         'content-type' => "text/pson", },
       :method => "GET",
-      :path => "/#{indirection.name}/#{data.value}",
+      :path => "/v3/#{indirection.name}/#{data.value}",
       :params => params,
       :body => ''
     })
@@ -68,7 +68,7 @@ describe Puppet::Network::HTTP::API::V3 do
         'accept' => request[:accept_header],
         'content-type' => "text/pson", },
       :method => "GET",
-      :path => "/#{indirection.name}s/#{key}",
+      :path => "/v3/#{indirection.name}s/#{key}",
       :params => params,
       :body => ''
     })
@@ -89,14 +89,14 @@ describe Puppet::Network::HTTP::API::V3 do
     end
 
     it "should get the environment from a query parameter" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/bar")
       handler.uri2indirection(request)[3][:environment].to_s.should == "env"
     end
 
     it "should fail if the environment is not alphanumeric" do
       request = Puppet::Network::HTTP::Request.new({},
                                                    {:environment => "env ness"},
-                                                   "GET", "/node/bar")
+                                                   "GET", "/v3/node/bar")
       lambda { handler.uri2indirection(request) }.should raise_error(ArgumentError)
     end
 
@@ -104,7 +104,7 @@ describe Puppet::Network::HTTP::API::V3 do
       request = Puppet::Network::HTTP::Request.new({},
                                                    {:environment => "env",
                                                     :bucket_path => "/malicious/path" },
-                                                   "GET", "/node/bar")
+                                                   "GET", "/v3/node/bar")
       handler.uri2indirection(request)[3].should_not include({ :bucket_path => "/malicious/path" })
     end
 
@@ -112,42 +112,42 @@ describe Puppet::Network::HTTP::API::V3 do
       request = Puppet::Network::HTTP::Request.new({},
                                                    {:environment => "env",
                                                     :allowed_param => "value" },
-                                                   "GET", "/node/bar")
+                                                   "GET", "/v3/node/bar")
       handler.uri2indirection(request)[3].should include({ :allowed_param => "value" })
     end
 
     it "should return the environment as a Puppet::Node::Environment" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/bar")
       handler.uri2indirection(request)[3][:environment].should be_a(Puppet::Node::Environment)
     end
 
     it "should use the first field of the URI as the indirection name" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/bar")
       handler.uri2indirection(request)[0].name.should == :node
     end
 
     it "should fail if the indirection name is not alphanumeric" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/foo ness/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/foo ness/bar")
       lambda { handler.uri2indirection(request) }.should raise_error(ArgumentError)
     end
 
     it "should use the remainder of the URI as the indirection key" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/bar")
       handler.uri2indirection(request)[2].should == "bar"
     end
 
     it "should support the indirection key being a /-separated file path" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/bee/baz/bomb")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/bee/baz/bomb")
       handler.uri2indirection(request)[2].should == "bee/baz/bomb"
     end
 
     it "should fail if no indirection key is specified" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/")
       lambda { handler.uri2indirection(request) }.should raise_error(ArgumentError)
     end
 
     it "should fail if no indirection key is specified" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node")
       lambda { handler.uri2indirection(request) }.should raise_error(ArgumentError)
     end
 
@@ -168,12 +168,12 @@ describe Puppet::Network::HTTP::API::V3 do
     end
 
     it "should change indirection name to 'status' if the http method is a GET and the indirection name is statuses" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/statuses/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/statuses/bar")
       handler.uri2indirection(request)[0].name.should == :status
     end
 
     it "should change indirection name to 'node' if the http method is a GET and the indirection name is nodes" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/nodes/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/nodes/bar")
       handler.uri2indirection(request)[0].name.should == :node
     end
 
@@ -186,13 +186,13 @@ describe Puppet::Network::HTTP::API::V3 do
     end
 
     it "should fail if an indirection method cannot be picked" do
-      request = Puppet::Network::HTTP::Request.new({}, params, "UPDATE", "/node/bar")
+      request = Puppet::Network::HTTP::Request.new({}, params, "UPDATE", "/v3/node/bar")
       lambda { handler.uri2indirection(request) }.should raise_error(ArgumentError)
     end
 
     it "should URI unescape the indirection key" do
       escaped = URI.escape("foo bar")
-      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/node/#{escaped}")
+      request = Puppet::Network::HTTP::Request.new({}, params, "GET", "/v3/node/#{escaped}")
       indirection, method, key, final_params = handler.uri2indirection(request)
       key.should == "foo bar"
     end
@@ -202,12 +202,12 @@ describe Puppet::Network::HTTP::API::V3 do
     let(:request) { Puppet::Indirector::Request.new(:foo, :find, "with spaces", nil, :foo => :bar, :environment => "myenv") }
 
     it "should include the environment in the query string of the URI" do
-      handler.class.request_to_uri_with_env(request).should == "/foo/with%20spaces?environment=myenv&foo=bar"
+      handler.class.request_to_uri_with_env(request).should == "/v3/foo/with%20spaces?environment=myenv&foo=bar"
     end
 
     it "should pluralize the indirection name if the method is 'search'" do
       request.stubs(:method).returns :search
-      handler.class.request_to_uri_with_env(request).split("/")[1].should == "foos"
+      handler.class.request_to_uri_with_env(request).split("/")[2].should == "foos"
     end
 
     it "should add the query string to the URI" do
@@ -224,16 +224,16 @@ describe Puppet::Network::HTTP::API::V3 do
     end
 
     it "should use the indirection as the first field of the URI" do
-      handler.class.request_to_uri_and_body(request).first.split("/")[1].should == "foo"
+      handler.class.request_to_uri_and_body(request).first.split("/")[2].should == "foo"
     end
 
     it "should use the escaped key as the remainder of the URI" do
       escaped = URI.escape("with spaces")
-      handler.class.request_to_uri_and_body(request).first.split("/")[2].sub(/\?.+/, '').should == escaped
+      handler.class.request_to_uri_and_body(request).first.split("/")[3].sub(/\?.+/, '').should == escaped
     end
 
     it "should return the URI and body separately" do
-      handler.class.request_to_uri_and_body(request).should == ["/foo/with%20spaces", "environment=myenv&foo=bar"]
+      handler.class.request_to_uri_and_body(request).should == ["/v3/foo/with%20spaces", "environment=myenv&foo=bar"]
     end
   end
 
@@ -241,12 +241,12 @@ describe Puppet::Network::HTTP::API::V3 do
     let(:request) { Puppet::Indirector::Request.new(:foo, :save, "with spaces", nil, :foo => :bar, :environment => "myenv") }
 
     it "should use the indirection as the first field of the URI" do
-      handler.class.indirection2uri(request).split("/")[1].should == "foo"
+      handler.class.indirection2uri(request).split("/")[2].should == "foo"
     end
 
     it "should use the escaped key as the remainder of the URI" do
       escaped = URI.escape("with spaces")
-      handler.class.indirection2uri(request).split("/")[2].sub(/\?.+/, '').should == escaped
+      handler.class.indirection2uri(request).split("/")[3].sub(/\?.+/, '').should == escaped
     end
 
     it "should add the query string to the URI" do

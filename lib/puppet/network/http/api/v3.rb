@@ -25,7 +25,7 @@ class Puppet::Network::HTTP::API::V3
   }
 
   def self.routes
-    Puppet::Network::HTTP::Route.path(/.*/).any(new)
+    Puppet::Network::HTTP::Route.path(%r{^/v3}).any(new)
   end
 
   # handle an HTTP request
@@ -51,14 +51,16 @@ class Puppet::Network::HTTP::API::V3
   end
 
   def uri2indirection(request)
-    indirection_name, key = request.path.split("/", 3)[1..-1] # the first field is always nil because of the leading slash
+    # the first field is always nil because of the leading slash,
+    # and we also want to strip off the leading /v3.
+    indirection_name, key = request.path.split("/", 4)[2..-1]
 
     if indirection_name !~ /^\w+$/
       raise ArgumentError, "The indirection name must be purely alphanumeric, not '#{indirection_name}'"
     end
 
     method = indirection_method(request.method, indirection_name)
-    check_authorization(method, "/#{indirection_name}/#{key}", request.params)
+    check_authorization(method, "/v3/#{indirection_name}/#{key}", request.params)
 
     indirection = Puppet::Indirector::Indirection.instance(indirection_name.to_sym)
     if !indirection
@@ -213,17 +215,17 @@ class Puppet::Network::HTTP::API::V3
 
   def self.indirection2uri(request)
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    "/#{indirection}/#{request.escaped_key}?#{request.query_string}"
+    "/v3/#{indirection}/#{request.escaped_key}?#{request.query_string}"
   end
 
   def self.request_to_uri_with_env(request)
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    "/#{indirection}/#{request.escaped_key}?environment=#{request.environment.to_s}&#{request.query_string}"
+    "/v3/#{indirection}/#{request.escaped_key}?environment=#{request.environment.to_s}&#{request.query_string}"
   end
 
   def self.request_to_uri_and_body(request)
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    ["/#{indirection}/#{request.escaped_key}", "environment=#{request.environment.to_s}&#{request.query_string}"]
+    ["/v3/#{indirection}/#{request.escaped_key}", "environment=#{request.environment.to_s}&#{request.query_string}"]
   end
 
   def self.pluralize(indirection)
