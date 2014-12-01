@@ -1011,12 +1011,12 @@ EOT
       this is the port to listen on; for puppet agent, this is the port
       to make requests on. Both applications use this setting to get the port.",
     },
-    :puppet_url_prefix => {
+    :master_url_prefix => {
         :default => "/puppet",
         :desc    => "TODO",
         :hook    => proc do |value|
           if !value.start_with?("/")
-            Puppet[:puppet_url_prefix] = "/#{value}"
+            Puppet[:master_url_prefix] = "/#{value}"
           end
         end
     },

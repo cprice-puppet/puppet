@@ -14,7 +14,7 @@ class Puppet::Network::HTTP::WEBrickREST < WEBrick::HTTPServlet::AbstractServlet
 
   def initialize(server)
     raise ArgumentError, "server is required" unless server
-    prefix = Regexp.new(Puppet[:puppet_url_prefix])
+    prefix = Regexp.new(Puppet[:master_url_prefix])
     register([Puppet::Network::HTTP::Route.path(prefix).
                   any.
                   chain(Puppet::Network::HTTP::API::V3.routes,

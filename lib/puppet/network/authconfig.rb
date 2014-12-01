@@ -5,11 +5,11 @@ module Puppet
   class Network::AuthConfig
     attr_accessor :rights
 
-    def url_prefix
-      Puppet[:puppet_url_prefix]
+    def self.url_prefix
+      Puppet[:master_url_prefix]
     end
 
-    def default_acl
+    def self.default_acl
       [
       # API V2.0
       { :acl => "#{url_prefix}/v2.0/environments", :method => :find, :allow => '*', :authenticated => true },
@@ -41,7 +41,7 @@ module Puppet
 
     # force regular ACLs to be present
     def insert_default_acl
-      default_acl.each do |acl|
+      self.class.default_acl.each do |acl|
         unless rights[acl[:acl]]
           Puppet.info "Inserting default '#{acl[:acl]}' (auth #{acl[:authenticated]}) ACL"
           mk_acl(acl)
