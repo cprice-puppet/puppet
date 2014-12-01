@@ -5,28 +5,32 @@ module Puppet
   class Network::AuthConfig
     attr_accessor :rights
 
-    URL_PREFIX = "puppet"
+    def url_prefix
+      Puppet[:puppet_url_prefix]
+    end
 
-    DEFAULT_ACL = [
+    def default_acl
+      [
       # API V2.0
-      { :acl => "/#{URL_PREFIX}/v2.0/environments", :method => :find, :allow => '*', :authenticated => true },
+      { :acl => "#{url_prefix}/v2.0/environments", :method => :find, :allow => '*', :authenticated => true },
 
       # API V3
-      { :acl => "~ ^\/#{URL_PREFIX}\/v3\/catalog\/([^\/]+)$", :method => :find, :allow => '$1', :authenticated => true },
-      { :acl => "~ ^\/#{URL_PREFIX}\/v3\/node\/([^\/]+)$", :method => :find, :allow => '$1', :authenticated => true },
+      { :acl => "~ ^#{url_prefix}\/v3\/catalog\/([^\/]+)$", :method => :find, :allow => '$1', :authenticated => true },
+      { :acl => "~ ^#{url_prefix}\/v3\/node\/([^\/]+)$", :method => :find, :allow => '$1', :authenticated => true },
       # this one will allow all file access, and thus delegate
       # to fileserver.conf
-      { :acl => "/#{URL_PREFIX}/v3/file" },
-      { :acl => "/#{URL_PREFIX}/v3/certificate_revocation_list/ca", :method => :find, :authenticated => true },
-      { :acl => "~ ^\/#{URL_PREFIX}\/v3\/report\/([^\/]+)$", :method => :save, :allow => '$1', :authenticated => true },
+      { :acl => "#{url_prefix}/v3/file" },
+      { :acl => "#{url_prefix}/v3/certificate_revocation_list/ca", :method => :find, :authenticated => true },
+      { :acl => "~ ^#{url_prefix}\/v3\/report\/([^\/]+)$", :method => :save, :allow => '$1', :authenticated => true },
       # These allow `auth any`, because if you can do them anonymously you
       # should probably also be able to do them when trusted.
-      { :acl => "/#{URL_PREFIX}/v3/certificate/ca", :method => :find, :authenticated => :any },
-      { :acl => "/#{URL_PREFIX}/v3/certificate/", :method => :find, :authenticated => :any },
-      { :acl => "/#{URL_PREFIX}/v3/certificate_request", :method => [:find, :save], :authenticated => :any },
-      { :acl => "/#{URL_PREFIX}/v3/status", :method => [:find], :authenticated => true },
-      { :acl => "/#{URL_PREFIX}/v3/environments", :method => :find, :allow => '*', :authenticated => true },
-    ]
+      { :acl => "#{url_prefix}/v3/certificate/ca", :method => :find, :authenticated => :any },
+      { :acl => "#{url_prefix}/v3/certificate/", :method => :find, :authenticated => :any },
+      { :acl => "#{url_prefix}/v3/certificate_request", :method => [:find, :save], :authenticated => :any },
+      { :acl => "#{url_prefix}/v3/status", :method => [:find], :authenticated => true },
+      { :acl => "#{url_prefix}/v3/environments", :method => :find, :allow => '*', :authenticated => true },
+      ]
+      end
 
     # Just proxy the setting methods to our rights stuff
     [:allow, :deny].each do |method|
@@ -37,7 +41,7 @@ module Puppet
 
     # force regular ACLs to be present
     def insert_default_acl
-      DEFAULT_ACL.each do |acl|
+      default_acl.each do |acl|
         unless rights[acl[:acl]]
           Puppet.info "Inserting default '#{acl[:acl]}' (auth #{acl[:authenticated]}) ACL"
           mk_acl(acl)

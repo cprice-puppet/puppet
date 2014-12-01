@@ -28,7 +28,8 @@ class Puppet::Network::HTTP::RackREST
 
   def initialize(args={})
     super()
-    register([Puppet::Network::HTTP::Route.path(%r{/puppet}).
+    prefix = Regexp.new(Puppet[:puppet_url_prefix])
+    register([Puppet::Network::HTTP::Route.path(prefix).
                   any.
                   chain(Puppet::Network::HTTP::API::V3.routes,
                         Puppet::Network::HTTP::API::V2.routes)])
