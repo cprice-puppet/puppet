@@ -30,6 +30,7 @@ class Puppet::Network::HTTP::API::V1
 
   # handle an HTTP request
   def call(request, response)
+    # require 'pry'; binding.pry
     indirection, method, key, params = uri2indirection(request)
     certificate = request.client_cert
 
@@ -60,21 +61,26 @@ class Puppet::Network::HTTP::API::V1
     method = indirection_method(request.method, indirection_name)
     check_authorization(method, "/#{indirection_name}/#{key}", request.params)
 
+    puts "REQUEST METHOD: #{method}"
+    puts "PARAMS: #{request.params.keys}"
+
     indirection = Puppet::Indirector::Indirection.instance(indirection_name.to_sym)
     if !indirection
       raise ArgumentError, "Could not find indirection '#{indirection_name}'"
     end
 
     if method == :save
+      # require 'pry'; binding.pry
       # In the case of a PUT request which maps to a `save` indirection, the HTTP
       # specification doesn't allow a query string, so we can't put the environment
       # there.  It needs to go in the request body.  However, since the
       # indirector hides the deserialization of the body behind the 'model' object
       # for each different indirection, we need to go ahead and deserialize the
       # body into the indirector model object and then read the environment from there.
-      model_object = read_body_into_model(indirection.model, request)
-      environment = model_object.environment
-      request.params[:model_object] = model_object
+      # model_object = read_body_into_model(indirection.model, request)
+      # environment = model_object.environment
+      environment = request.params.delete(:environment)
+      # request.params[:model_object] = model_object
     else
       environment = request.params.delete(:environment)
     end
@@ -179,7 +185,9 @@ class Puppet::Network::HTTP::API::V1
   # Execute our save.
   def do_save(indirection, key, params, request, response)
     formatter = accepted_response_formatter_or_pson_for(indirection.model, request)
-    result = indirection.save(params[:model_object], key)
+    model_object = read_body_into_model(indirection.model, request)
+    # result = indirection.save(params[:model_object], key)
+    result = indirection.save(model_object, key)
 
     response.respond_with(200, formatter, formatter.render(result))
   end
@@ -211,19 +219,31 @@ class Puppet::Network::HTTP::API::V1
     method
   end
 
-  def self.indirection2uri(request)
+  # def self.indirection2uri(request)
+  #   indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
+  #   "/#{indirection}/#{request.escaped_key}?#{request.query_string}"
+  # end
+
+  def self.request_to_uri(request)
+    # require 'pry'; binding.pry
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    "/#{indirection}/#{request.escaped_key}?#{request.query_string}"
+    "/#{indirection}/#{request.escaped_key}?environment=#{request.environment.name}&#{request.query_string}"
   end
 
-  def self.request_to_uri_with_env(request)
-    indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    "/#{indirection}/#{request.escaped_key}?environment=#{request.environment.to_s}&#{request.query_string}"
-  end
+  # def self.request_to_uri_with_env(request)
+  #   indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
+  #   "/#{indirection}/#{request.escaped_key}?environment=#{request.environment.to_s}&#{request.query_string}"
+  # end
+  #
+  # def self.request_to_uri_and_body(request)
+  #   indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
+  #   ["/#{indirection}/#{request.escaped_key}", "environment=#{request.environment.to_s}&#{request.query_string}"]
+  # end
 
   def self.request_to_uri_and_body(request)
+    # require 'pry'; binding.pry
     indirection = request.method == :search ? pluralize(request.indirection_name.to_s) : request.indirection_name.to_s
-    ["/#{indirection}/#{request.escaped_key}", "environment=#{request.environment.to_s}&#{request.query_string}"]
+    ["/#{indirection}/#{request.escaped_key}?environment=#{request.environment.name}", request.query_string]
   end
 
   def self.pluralize(indirection)

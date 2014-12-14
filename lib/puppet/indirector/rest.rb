@@ -83,7 +83,7 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
 
   def find(request)
     uri, body = Puppet::Network::HTTP::API::V1.request_to_uri_and_body(request)
-    uri_with_query_string = "#{uri}?#{body}"
+    uri_with_query_string = "#{uri}&#{body}"
 
     response = do_request(request) do |request|
       # WEBrick in Ruby 1.9.1 only supports up to 1024 character lines in an HTTP request
@@ -132,7 +132,8 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
 
   def search(request)
     response = do_request(request) do |request|
-      http_get(request, Puppet::Network::HTTP::API::V1.request_to_uri_with_env(request), headers)
+      # http_get(request, Puppet::Network::HTTP::API::V1.request_to_uri_with_env(request), headers)
+      http_get(request, Puppet::Network::HTTP::API::V1.request_to_uri(request), headers)
     end
 
     if is_http_200?(response)
@@ -147,7 +148,7 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
     raise ArgumentError, "DELETE does not accept options" unless request.options.empty?
 
     response = do_request(request) do |request|
-      http_delete(request, Puppet::Network::HTTP::API::V1.request_to_uri_with_env(request), headers)
+      http_delete(request, Puppet::Network::HTTP::API::V1.request_to_uri(request), headers)
     end
 
     if is_http_200?(response)
@@ -162,7 +163,7 @@ class Puppet::Indirector::REST < Puppet::Indirector::Terminus
     raise ArgumentError, "PUT does not accept options" unless request.options.empty?
 
     response = do_request(request) do |request|
-      http_put(request, Puppet::Network::HTTP::API::V1.indirection2uri(request), request.instance.render, headers.merge({ "Content-Type" => request.instance.mime }))
+      http_put(request, Puppet::Network::HTTP::API::V1.request_to_uri(request), request.instance.render, headers.merge({ "Content-Type" => request.instance.mime }))
     end
 
     if is_http_200?(response)

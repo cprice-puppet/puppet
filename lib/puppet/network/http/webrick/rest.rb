@@ -1,6 +1,7 @@
 require 'puppet/network/http/handler'
 require 'resolv'
 require 'webrick'
+require 'webrick/httputils'
 require 'puppet/util/ssl'
 
 class Puppet::Network::HTTP::WEBrickREST < WEBrick::HTTPServlet::AbstractServlet
@@ -19,7 +20,12 @@ class Puppet::Network::HTTP::WEBrickREST < WEBrick::HTTPServlet::AbstractServlet
 
   # Retrieve the request parameters, including authentication information.
   def params(request)
-    params = request.query || {}
+    params =
+        if @request_method == "GET" || @request_method == "HEAD"
+          request.query || {}
+        else
+          request.query.merge(WEBrick::HTTPUtils.parse_query(request.query_string))
+        end
 
     params = Hash[params.collect do |key, value|
       all_values = value.list

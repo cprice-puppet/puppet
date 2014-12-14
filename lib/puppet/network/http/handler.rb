@@ -45,6 +45,8 @@ module Puppet::Network::HTTP::Handler
   def process(request, response)
     new_response = Puppet::Network::HTTP::Response.new(self, response)
 
+    # require 'pry'; binding.pry
+
     request_headers = headers(request)
     request_params = params(request)
     request_method = http_method(request)
