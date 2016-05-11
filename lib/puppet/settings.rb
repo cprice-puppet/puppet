@@ -27,6 +27,7 @@ class Puppet::Settings
   require 'puppet/settings/priority_setting'
   require 'puppet/settings/autosign_setting'
   require 'puppet/settings/config_file'
+  require 'puppet/settings/hocon_config_file'
   require 'puppet/settings/value_translator'
   require 'puppet/settings/environment_conf'
 
@@ -108,7 +109,12 @@ class Puppet::Settings
     @deprecated_settings_that_have_been_configured = []
 
     @translate = Puppet::Settings::ValueTranslator.new
-    @config_file_parser = Puppet::Settings::ConfigFile.new(@translate)
+    if ENV['USE_HOCON']
+      @config_file_parser = Puppet::Settings::HoconConfigFile.new(@translate)
+    else
+      @config_file_parser = Puppet::Settings::ConfigFile.new(@translate)
+    end
+
   end
 
   # Retrieve a config value

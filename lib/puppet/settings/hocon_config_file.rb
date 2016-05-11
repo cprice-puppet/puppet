@@ -1,11 +1,12 @@
-require 'puppet/settings/ini_file'
+# require 'puppet/settings/ini_file'
+require 'hocon'
 
 ##
 # @api private
 #
 # Parses puppet configuration files
 #
-class Puppet::Settings::ConfigFile
+class Puppet::Settings::HoconConfigFile
 
   ##
   # @param value_converter [Proc] a function that will convert strings into ruby types
@@ -25,18 +26,26 @@ class Puppet::Settings::ConfigFile
       allowed_section_names << 'main' unless allowed_section_names.include?('main')
     end
 
-    ini = Puppet::Settings::IniFile.parse(StringIO.new(text))
-    unique_sections_in(ini, file, allowed_section_names).each do |section_name|
+    hocon = Hocon.parse(text)
+    # ini = Puppet::Settings::IniFile.parse(StringIO.new(text))
+    unique_sections_in(hocon, file, allowed_section_names).each do |section_name|
+      puts "ADDING SECTION: '#{section_name}'"
       section = Section.new(section_name.to_sym)
       result.with_section(section)
 
-      ini.lines_in(section_name).each do |line|
-        if line.is_a?(Puppet::Settings::IniFile::SettingLine)
-          parse_setting(line, section)
-        elsif line.text !~ /^\s*#|^\s*$/
-          raise Puppet::Settings::ParseError.new("Could not match line #{line.text}", file, line.line_number)
-        end
+      puts "HOCON OBJECT IS: #{hocon}"
+
+      hocon[section_name].keys.each do |key|
+        puts "FOUND SETTING: #{key}"
+        parse_setting(key, hocon[section_name][key], section)
       end
+      # ini.lines_in(section_name).each do |line|
+      #   if line.is_a?(Puppet::Settings::IniFile::SettingLine)
+      #     parse_setting(line, section)
+      #   elsif line.text !~ /^\s*#|^\s*$/
+      #     raise Puppet::Settings::ParseError.new("Could not match line #{line.text}", file, line.line_number)
+      #   end
+      # end
     end
 
     result
@@ -79,8 +88,9 @@ class Puppet::Settings::ConfigFile
 
 private
 
-  def unique_sections_in(ini, file, allowed_section_names)
-    ini.section_lines.collect do |section|
+  def unique_sections_in(hocon, file, allowed_section_names)
+    # ini.section_lines.collect do |section|
+    hocon.keys do |section|
       if !allowed_section_names.empty? && !allowed_section_names.include?(section.name)
         raise(Puppet::Error, "Illegal section '#{section.name}' in config file #{file} at line #{section.line_number}. The only valid puppet.conf sections are: [#{allowed_section_names.join(", ")}]. Please use the directory environments feature to specify environments. (See https://docs.puppetlabs.com/puppet/latest/reference/environments.html)")
       end
@@ -88,15 +98,19 @@ private
     end.uniq
   end
 
-  def parse_setting(setting, section)
-    var = setting.name.intern
+  # def parse_setting(setting, section)
+  def parse_setting(hocon_name, hocon_value, section)
+    # var = setting.name.intern
+    var = hocon_name.intern
 
     # We don't want to munge modes, because they're specified in octal, so we'll
     # just leave them as a String, since Puppet handles that case correctly.
     if var == :mode
-      value = setting.value
+      # value = setting.value
+      value = hocon_value
     else
-      value = @value_converter[setting.value]
+      # value = @value_converter[setting.value]
+      value = @value_converter[hocon_value]
     end
 
     # Check to see if this is a file argument and it has extra options
