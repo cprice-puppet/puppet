@@ -581,15 +581,20 @@ class Puppet::Settings
 
   # Parse the configuration file.  Just provides thread safety.
   def parse_config_files
+    puts "PARSING CONFIG FILES!"
     file = which_configuration_file
+    puts "CONFIG FILE: '#{file}'"
     if Puppet::FileSystem.exist?(file)
       begin
         text = read_file(file)
+        puts "READ TEXT FROM CONFIG FILE: '#{text}'"
       rescue => detail
+        puts "CAUGHT ERROR WHEN READING CONFIG FILE: '#{detail}'"
         Puppet.log_exception(detail, "Could not load #{file}: #{detail}")
         return
       end
     else
+      puts "CONFIG FILE DOESN'T EXIST"
       return
     end
 
