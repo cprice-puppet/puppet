@@ -26,7 +26,11 @@ class Puppet::Settings::HoconConfigFile
       allowed_section_names << 'main' unless allowed_section_names.include?('main')
     end
 
-    hocon = Hocon.parse(text)
+    # puts "HOCON PARSE: #{Hocon.parse(text)}"
+    # puts "HOCON LOAD: #{Hocon.load(file)}"
+    # puts "the file: #{file}"
+    hocon = Hocon.load(file)
+
     # ini = Puppet::Settings::IniFile.parse(StringIO.new(text))
     unique_sections_in(hocon, file, allowed_section_names).each do |section_name|
       puts "ADDING SECTION: '#{section_name}'"
@@ -47,6 +51,8 @@ class Puppet::Settings::HoconConfigFile
       #   end
       # end
     end
+
+    puts "CONFIG RESULT IS: #{result}"
 
     result
   end

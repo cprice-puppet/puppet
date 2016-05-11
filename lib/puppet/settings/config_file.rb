@@ -39,6 +39,8 @@ class Puppet::Settings::ConfigFile
       end
     end
 
+    puts "INI CONFIG RESULT OBJECT: '#{result}'"
+
     result
   end
 
