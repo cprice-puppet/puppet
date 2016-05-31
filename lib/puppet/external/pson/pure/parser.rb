@@ -177,6 +177,7 @@ module PSON
       })
 
       def parse_string
+        puts "PSON: parse_string"
         if scan(STRING)
           return '' if self[1].empty?
           string = self[1].gsub(%r{(?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff])}n) do |c|
@@ -192,7 +193,10 @@ module PSON
               PSON.encode('utf-8', 'utf-16be', bytes)
             end
           end
+          puts "PSON parser: converting string to UTF8?!  current length: #{string.length}"
           string.force_encoding(Encoding::UTF_8) if string.respond_to?(:force_encoding)
+          puts "PSON parser: converted string to UTF8?!  current length: #{string.length}"
+          puts "PSON parser: converted string to UTF8?!  what if I forced it back?: #{string.dup.force_encoding(Encoding::ASCII_8BIT).length}"
           string
         else
           UNPARSED

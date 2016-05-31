@@ -40,6 +40,7 @@ module PSON
   # UTF16 big endian characters as \u????, and return it.
   if String.method_defined?(:force_encoding)
     def utf8_to_pson(string) # :nodoc:
+      puts "UTF8_TO_PSON (force_encoding flavor)"
       string = string.dup
       string << '' # XXX workaround: avoid buffer sharing
       string.force_encoding(Encoding::ASCII_8BIT)
@@ -50,6 +51,7 @@ module PSON
     end
   else
     def utf8_to_pson(string) # :nodoc:
+      puts "UTF8_TO_PSON (force_encoding flavor)"
       string.gsub(/["\\\x0-\x1f]/n) { MAP[$MATCH] }
     end
   end
@@ -268,6 +270,7 @@ module PSON
           # produced PSON string output further.
           # _depth_ is used to find out nesting depth, to indent accordingly.
           def to_pson(state = nil, depth = 0, *)
+            puts "ARRAY.to_pson!!!"
             if state
               state = PSON.state.from_state(state)
               state.check_max_nesting(depth)
@@ -338,7 +341,10 @@ module PSON
           # returns a PSON string encoded with UTF16 big endian characters as
           # \u????.
           def to_pson(*)
-            '"' << PSON.utf8_to_pson(self) << '"'
+            puts "CALLING STRING.to_pson!"
+            foo = '"' << PSON.utf8_to_pson(self) << '"'
+            puts "STRING.to_pson length: '#{foo.length}'"
+            foo
           end
 
           # Module that holds the extinding methods if, the String module is
