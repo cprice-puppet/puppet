@@ -173,23 +173,32 @@ module PSON
             ?r  => "\r",
             ?t  => "\t",
             ?u  => nil,
-
       })
 
       def parse_string
         if scan(STRING)
           return '' if self[1].empty?
-          string = self[1].gsub(%r{(?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff])}n) do |c|
+          puts "PSON.parser#parse_string about to enter horrid regex"
+          # string = self[1].gsub(%r{(?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff])}n) do |c|
+          # string = self[1].gsub(%r{(?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+)}n) do |c|
+          string = self[1].gsub(%r{(?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4})))}n) do |c|
+            puts "horrible regex matched.  c: '#{c}' (#{c.class}), $MATCH[1]: '#{$MATCH[1]}'"
             if u = UNESCAPE_MAP[$MATCH[1]]
+            # if u = UNESCAPE_MAP[c]
+              puts "Found match in unescape map: '#{u}' (#{u.class})"
               u
             else # \uXXXX
-              bytes = ''
-              i = 0
-              while c[6 * i] == ?\\ && c[6 * i + 1] == ?u
-                bytes << c[6 * i + 2, 2].to_i(16) << c[6 * i + 4, 2].to_i(16)
-                i += 1
-              end
-              PSON.encode('utf-8', 'utf-16be', bytes)
+              puts "Did not find match in unescape map, proceeding to horrible bitwise operations."
+              u = [c[2..-1].to_i(16)].pack("C")
+              puts "Hex to int: '#{u}' (#{u.class})"
+              u
+              # bytes = ''
+              # i = 0
+              # while c[6 * i] == ?\\ && c[6 * i + 1] == ?u
+              #   bytes << c[6 * i + 2, 2].to_i(16) << c[6 * i + 4, 2].to_i(16)
+              #   i += 1
+              # end
+              # PSON.encode('utf-8', 'utf-16be', bytes)
             end
           end
           string.force_encoding(Encoding::UTF_8) if string.respond_to?(:force_encoding)
