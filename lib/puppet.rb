@@ -15,9 +15,15 @@ require 'puppet/settings'
 require 'puppet/util/feature'
 require 'puppet/util/suidmanager'
 require 'puppet/util/run_mode'
-require 'puppet/external/pson/common'
-require 'puppet/external/pson/version'
-require 'puppet/external/pson/pure'
+
+
+if defined? JRUBY_VERSION
+  require 'puppet/external/pson/jackedpson'
+else
+  # require 'puppet/external/pson/common'
+  # require 'puppet/external/pson/version'
+  require 'puppet/external/pson/pure'
+end
 
 #------------------------------------------------------------
 # the top-level module

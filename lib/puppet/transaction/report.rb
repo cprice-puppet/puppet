@@ -233,6 +233,7 @@ class Puppet::Transaction::Report
 
     @resource_statuses = {}
     data['resource_statuses'].map do |record|
+      puts "ITERATING OVER RESOURCE STATUSES: #{record} (#{record.class})"
       if record[1] == {}
         status = nil
       else
