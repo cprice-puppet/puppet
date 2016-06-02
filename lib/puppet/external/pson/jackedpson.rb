@@ -42,51 +42,55 @@ class PSON
     # TODO: probably making lots of copies of things here, need to see if there's
     # a way to avoid that.
     result = mapper.read_value(ByteArrayInputStream.new(s.to_java_bytes))
-    wrap_it_up_b(result)
+    PSON::Parser.wrap_it_up_b(result)
   end
 
-  def self.wrap_it_up_b(v)
-    if v.is_a?(Map)
-      convert_map(v)
-    elsif v.is_a?(List)
-      convert_list(v)
-    elsif v.is_a?(PsonDecodingInputStreamWrapper::PsonDecodedInputStream)
-      convert_pson_input_stream(v)
-    elsif v.is_a?(Fixnum)
-      v
-    elsif v.is_a?(Float)
-      v
-    elsif v.is_a?(NilClass)
-      nil
-    elsif v.is_a?(FalseClass)
-      false
-    elsif v.is_a?(TrueClass)
-      true
-    else
-      raise "Unsupported type: #{v.class}"
+  class Parser
+
+    def self.wrap_it_up_b(v)
+      if v.is_a?(Map)
+        convert_map(v)
+      elsif v.is_a?(List)
+        convert_list(v)
+      elsif v.is_a?(PsonDecodingInputStreamWrapper::PsonDecodedInputStream)
+        convert_pson_input_stream(v)
+      elsif v.is_a?(Fixnum)
+        v
+      elsif v.is_a?(Float)
+        v
+      elsif v.is_a?(NilClass)
+        nil
+      elsif v.is_a?(FalseClass)
+        false
+      elsif v.is_a?(TrueClass)
+        true
+      else
+        raise "Unsupported type: #{v.class}"
+      end
+    end
+
+    def self.convert_map(m)
+      rv = {}
+      m.each do |k,v|
+        rv[k] = wrap_it_up_b(v)
+      end
+      rv
+    end
+
+    def self.convert_list(a)
+      rv = []
+      a.each do |v|
+        rv.push(wrap_it_up_b(v))
+      end
+      rv
+    end
+
+    def self.convert_pson_input_stream(is)
+      # TODO: see if there is a way to make this more memory efficient
+      is.to_io.read
     end
   end
 
-  def self.convert_map(m)
-    rv = {}
-    m.each do |k,v|
-      rv[k] = wrap_it_up_b(v)
-    end
-    rv
-  end
-
-  def self.convert_list(a)
-    rv = []
-    a.each do |v|
-      rv.push(wrap_it_up_b(v))
-    end
-    rv
-  end
-
-  def self.convert_pson_input_stream(is)
-    # TODO: see if there is a way to make this more memory efficient
-    is.to_io.read
-  end
 
 
 
@@ -170,12 +174,62 @@ class PSON
   #     end
   #   end
   # end
+
+  class Generator
+    def self.wrap_it_up_b(v)
+      puts "GENERATOR WRAPPING UP: #{v} (#{v.class})"
+      if v.is_a?(Hash)
+        convert_hash(v)
+      elsif v.is_a?(Array)
+        convert_list(v)
+      elsif v.is_a?(String)
+        v
+      elsif v.is_a?(Symbol)
+        v.to_s
+      elsif v.is_a?(Fixnum)
+        v
+      elsif v.is_a?(Float)
+        v
+      elsif v.is_a?(NilClass)
+        nil
+      elsif v.is_a?(FalseClass)
+        false
+      elsif v.is_a?(TrueClass)
+        true
+      elsif v.respond_to?(:to_data_hash)
+        wrap_it_up_b(v.to_data_hash)
+      else
+        raise "Unsupported type: #{v.class}"
+      end
+    end
+
+    def self.convert_hash(m)
+      rv = {}
+      m.each do |k,v|
+        rv[k] = wrap_it_up_b(v)
+      end
+      rv
+    end
+
+    def self.convert_list(a)
+      rv = []
+      a.each do |v|
+        rv.push(wrap_it_up_b(v))
+      end
+      rv
+    end
+  end
+
 end
 
 class Array
   def to_pson
+    wrapped = PSON::Generator.wrap_it_up_b(self)
+
+
+    puts "ABOUT TO CONVERT ARRAY TO PSON: #{wrapped} (#{wrapped.class})"
     out = ByteArrayOutputStream.new
-    PSON.mapper.write_value(out, self)
+    PSON.mapper.write_value(out, wrapped)
     # TODO: this is definitely making an unnecessary copy
     ByteArrayInputStream.new(out.to_byte_array).to_io.read
   end
@@ -188,7 +242,7 @@ class Hash
       puts "\tENVIRONMENT KEY: #{self["environment"]} (#{self["environment"].class})"
     end
     out = ByteArrayOutputStream.new
-    PSON.mapper.write_value(out, self)
+    PSON.mapper.write_value(out, PSON::Generator.wrap_it_up_b(self))
     # TODO: this is definitely making an unnecessary copy
     ByteArrayInputStream.new(out.to_byte_array).to_io.read
   end
