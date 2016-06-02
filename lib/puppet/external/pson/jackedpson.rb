@@ -87,7 +87,9 @@ class PSON
 
     def self.convert_pson_input_stream(is)
       # TODO: see if there is a way to make this more memory efficient
-      is.to_io.read
+      s = is.to_io.read
+      s.force_encoding(Encoding::ASCII_8BIT)
+      s
     end
   end
 
@@ -183,7 +185,8 @@ class PSON
       elsif v.is_a?(Array)
         convert_list(v)
       elsif v.is_a?(String)
-        v
+        s = v.dup
+        ByteArrayInputStream.new(s.force_encoding(Encoding::ASCII_8BIT).to_java_bytes)
       elsif v.is_a?(Symbol)
         v.to_s
       elsif v.is_a?(Fixnum)
@@ -231,7 +234,10 @@ class Array
     out = ByteArrayOutputStream.new
     PSON.mapper.write_value(out, wrapped)
     # TODO: this is definitely making an unnecessary copy
-    ByteArrayInputStream.new(out.to_byte_array).to_io.read
+    s = String.from_java_bytes(out.to_byte_array, Encoding::ASCII_8BIT)
+    # s = ByteArrayInputStream.new(out.to_byte_array).to_io.read
+    # s.force_encoding(Encoding::ASCII_8BIT)
+    s
   end
 end
 
@@ -244,7 +250,9 @@ class Hash
     out = ByteArrayOutputStream.new
     PSON.mapper.write_value(out, PSON::Generator.wrap_it_up_b(self))
     # TODO: this is definitely making an unnecessary copy
-    ByteArrayInputStream.new(out.to_byte_array).to_io.read
+    s = ByteArrayInputStream.new(out.to_byte_array).to_io.read
+    s.force_encoding(Encoding::ASCII_8BIT)
+    s
   end
 end
 
