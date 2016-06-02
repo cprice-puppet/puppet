@@ -73,6 +73,9 @@ module Puppet
   require 'puppet/util/logging'
   extend Puppet::Util::Logging
 
+  Puppet.notice("Initialized logging.")
+  Puppet.notice("Using PSON version: #{PSON::VERSION}")
+
   # Setup facter's logging
   Puppet::Util::Logging.setup_facter_logging!
 

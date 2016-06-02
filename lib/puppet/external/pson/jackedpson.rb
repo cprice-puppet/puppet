@@ -13,7 +13,7 @@ java_import java.io.ByteArrayOutputStream
 java_import "puppetlabs.jackson.unencoded.JackedSonMapper"
 java_import "puppetlabs.jackson.pson.PsonEncodingInputStreamWrapper"
 java_import "puppetlabs.jackson.pson.PsonDecodingInputStreamWrapper"
-java_import "puppetlabs.jackson.pson.PsonDecodingInputStreamWrapper$PsonDecodedInputStream"
+# java_import "puppetlabs.jackson.pson.PsonDecodingInputStreamWrapper$PsonDecodedInputStream"
 
 # PsonDecodingInputStreamWrapper::PsonDecodedInputStream.class_eval do
 #   def to_s
@@ -31,6 +31,9 @@ java_import "puppetlabs.jackson.pson.PsonDecodingInputStreamWrapper$PsonDecodedI
 # end
 
 class PSON
+
+  VERSION = "JackedPson 0.0.1"
+
   @@mapper = JackedSonMapper.new(PsonEncodingInputStreamWrapper.new,
                                  PsonDecodingInputStreamWrapper.new)
 
@@ -179,7 +182,7 @@ class PSON
 
   class Generator
     def self.wrap_it_up_b(v)
-      puts "GENERATOR WRAPPING UP: #{v} (#{v.class})"
+      # puts "GENERATOR WRAPPING UP: #{v} (#{v.class})"
       if v.is_a?(Hash)
         convert_hash(v)
       elsif v.is_a?(Array)
@@ -200,6 +203,7 @@ class PSON
       elsif v.is_a?(TrueClass)
         true
       elsif v.respond_to?(:to_data_hash)
+        # TODO: need to write up some notes explaining this
         wrap_it_up_b(v.to_data_hash)
       else
         raise "Unsupported type: #{v.class}"
@@ -230,7 +234,7 @@ class Array
     wrapped = PSON::Generator.wrap_it_up_b(self)
 
 
-    puts "ABOUT TO CONVERT ARRAY TO PSON: #{wrapped} (#{wrapped.class})"
+    # puts "ABOUT TO CONVERT ARRAY TO PSON: #{wrapped} (#{wrapped.class})"
     out = ByteArrayOutputStream.new
     PSON.mapper.write_value(out, wrapped)
     # TODO: this is definitely making an unnecessary copy
@@ -243,10 +247,10 @@ end
 
 class Hash
   def to_pson
-    puts "ABOUT TO CONVERT HASH TO PSON: #{self} (#{self.class})"
-    if self.has_key?("environment")
-      puts "\tENVIRONMENT KEY: #{self["environment"]} (#{self["environment"].class})"
-    end
+    # puts "ABOUT TO CONVERT HASH TO PSON: #{self} (#{self.class})"
+    # if self.has_key?("environment")
+    #   puts "\tENVIRONMENT KEY: #{self["environment"]} (#{self["environment"].class})"
+    # end
     out = ByteArrayOutputStream.new
     PSON.mapper.write_value(out, PSON::Generator.wrap_it_up_b(self))
     # TODO: this is definitely making an unnecessary copy
