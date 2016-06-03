@@ -5,12 +5,21 @@ require 'hocon/config_resolve_options'
 
 class HoconLoader
   def self.parse(defaults_file, user_file, run_mode)
-    user_config = Hocon::ConfigFactory.parse_file(user_file)
+
     default_config = Hocon::ConfigFactory.parse_file(defaults_file)
+
+    # compute dynamic values (certname, confdir, vardir, codedir)
+    # facter fqdn -> default_config[certname]
+    # if (root) -> confdir, vardir, codedir -> default_config
+    # if (runmode) -> default_config (? do we need this or can we handle it in defaults)?
+
+    user_config = Hocon::ConfigFactory.parse_file(user_file)
 
     resolved_config = Hocon::ConfigFactory.
         load_from_config(user_config.with_fallback(default_config),
                          Hocon::ConfigResolveOptions.defaults).root.unwrapped
+
+
 
     # filter out any nested maps to give us just the resolved "main" settings,
     # since we know that Puppet only supports scalar settings values, and our
@@ -24,6 +33,8 @@ class HoconLoader
 
     # finally, merge the run_mode settings onto the "main" settings.
     main_config.merge(run_mode_config)
+
+    # special case logic here for certname, and certname-derived settings
   end
 end
 
