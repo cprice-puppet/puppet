@@ -646,6 +646,7 @@ end
 #
 class PNumericType < PScalarType
   def initialize(from, to = Float::INFINITY)
+    puts "!!!!!! INITIALIZING NUMERIC TYPE"
     from = -Float::INFINITY if from.nil? || from == :default
     to = Float::INFINITY if to.nil? || to == :default
     raise ArgumentError, "'from' must be less or equal to 'to'. Got (#{from}, #{to}" if from.is_a?(Numeric) && to.is_a?(Numeric) && from > to

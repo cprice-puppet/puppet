@@ -20,6 +20,7 @@ end
 
 class Symbol
   def <=> (other)
+    puts "SYMBOL COMPARISON: '#{self}' (#{self.class}), '#{other}' (#{other.class})"
     if (other.class != Symbol)
       case Puppet[:strict]
       when :warning
